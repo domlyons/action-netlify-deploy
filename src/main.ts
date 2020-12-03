@@ -1,6 +1,9 @@
 import * as core from '@actions/core'
 import NetlifyAPI from 'netlify'
 import * as path from 'path'
+import fetch from 'node-fetch'
+
+const NETLIFY_BASE_URL = 'https://api.netlify.com/api/v1/sites'
 
 async function run(): Promise<void> {
   try {
@@ -32,7 +35,7 @@ async function run(): Promise<void> {
       core.setFailed('isProd must be one of `true` or `false`')
       return
     }
-
+    // https://api.netlify.com/api/v1/sites/{site_id}/deploys/{deploy_id}/restore
     // Create Netlify API client
     const client = new NetlifyAPI(token)
 
@@ -45,6 +48,18 @@ async function run(): Promise<void> {
       message,
       branch: alias
     })
+
+    if (isProd) {
+      const result = await fetch(
+        `${NETLIFY_BASE_URL}/${site}/deploys/${deploy.deployId}/restore`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+    }
 
     core.setOutput('deploy-id', deploy.deployId)
     core.setOutput('deploy-url', deploy.deploy.deploy_ssl_url)
